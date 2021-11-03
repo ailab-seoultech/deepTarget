@@ -65,9 +65,9 @@ def parse_arguments():
                         help="run mode: [train|predict]")
     
     parser.add_argument('--mirna_file', dest='MIRNA_FASTA_FILE', type=str,
-                        help="miRNA fasta file (default: data/miRNA.fasta)")
+                        help="miRNA fasta file (default: data/mirna.fasta)")
     parser.add_argument('--mrna_file', dest='MRNA_FASTA_FILE', type=str,
-                        help="mRNA fasta file (default: data/mRNA.fasta)")
+                        help="mRNA fasta file (default: data/mrna.fasta)")
     parser.add_argument('--seed_match', dest='SEED_MATCH', type=str,
                         help="seed match type: [offset-9-mer-m7|10-mer-m7|10-mer-m6] (default: offset-9-mer-m7)")
     parser.add_argument('--level', dest='LEVEL', type=str,
@@ -85,7 +85,7 @@ def parse_arguments():
                         help="output file to be saved in 'predict' mode (default: yyyyMMdd_HHmmss_results.csv)")
     
     parser.add_argument('--batch_size', dest='BATCH_SIZE', type=int,
-                        help="batch size to be used in 'train' mode (default: 32)")
+                        help="batch size to be used (default: 32)")
     parser.add_argument('--epochs', dest='EPOCHS', type=int,
                         help="epochs to be used in 'train' mode (default: 10)")
     

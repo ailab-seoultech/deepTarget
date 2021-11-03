@@ -60,7 +60,7 @@ def train_model(mirna_fasta_file, mrna_fasta_file, train_file, model=None, cts_s
     torch.save(model.state_dict(), save_file)
     
     
-def predict_result(mirna_fasta_file, mrna_fasta_file, query_file, model=None, weight_file=None, seed_match='offset-9-mer-m7', level='gene', output_file=None, device='cpu'):
+def predict_result(mirna_fasta_file, mrna_fasta_file, query_file, model=None, weight_file=None, seed_match='offset-9-mer-m7', level='gene', batch_size=32, output_file=None, device='cpu'):
     if not isinstance(model, deepTarget):
         raise ValueError("'model' expected <nn.Module 'deepTarget'>, got {}".format(type(model)))
     
@@ -70,22 +70,27 @@ def predict_result(mirna_fasta_file, mrna_fasta_file, query_file, model=None, we
     model.load_state_dict(torch.load(weight_file))
     
     test_set = Dataset(mirna_fasta_file, mrna_fasta_file, query_file, seed_match=seed_match, header=True, train=False)
+    test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=False)
     
+    y_probs = []
+    y_predicts = []
+    y_truth = []
+
     model = model.to(device)
     with torch.no_grad():
         model.eval()
         
-        mirna = torch.from_numpy(test_set.mirna).to(device, dtype=torch.float)
-        mrna = torch.from_numpy(test_set.mrna).to(device, dtype=torch.float)
-        label = torch.from_numpy(test_set.labels).to(device)
-        
-        outputs = model(mirna, mrna)
-        _, predicts = torch.max(outputs.data, 1)
-        probabilities = F.softmax(outputs, dim=1)
-        
-        y_probs = probabilities.cpu().numpy()[:, 1]
-        y_predicts = predicts.cpu().numpy()
-        y_truth = label.cpu().numpy()
+        with tqdm(test_loader, bar_format=bar_format) as tqdm_loader:
+            for i, ((mirna, mrna), label) in enumerate(tqdm_loader):
+                mirna, mrna, label = mirna.to(device, dtype=torch.float), mrna.to(device, dtype=torch.float), label.to(device)
+                
+                outputs = model(mirna, mrna)
+                _, predicts = torch.max(outputs.data, 1)
+                probabilities = F.softmax(outputs, dim=1)
+                
+                y_probs.extend(probabilities.cpu().numpy()[:, 1])
+                y_predicts.extend(predicts.cpu().numpy())
+                y_truth.extend(label.cpu().numpy())
         
         if output_file is None:
             time = datetime.now()
